@@ -19,6 +19,16 @@ source "${SCRIPT_DIR}/common.sh"
 
 require_cmd docker
 require_cmd minikube
+require_cmd go
+
+# The committed repo lacks go.sum files for both modules, so the
+# Dockerfile's `go mod download || true` falls through and the subsequent
+# `go build` fails with "missing go.sum entry" errors. Tidy the modules on
+# the host first — this regenerates the missing go.sum files (which are
+# generated artifacts) without touching any go source. Idempotent.
+log "tidying go modules (operator → api)"
+( cd "${REPO_ROOT}/operator" && go mod tidy )
+( cd "${REPO_ROOT}/api"      && go mod tidy )
 
 # The API Dockerfile copies operator/ into its build context (see
 # api/Dockerfile:8 — needed for the go.mod replace directive). So the API
