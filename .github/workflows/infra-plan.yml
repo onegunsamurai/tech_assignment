@@ -18,7 +18,7 @@ permissions:
 env:
   TF_VERSION: 1.9.5
   TG_VERSION: 0.66.9
-  AWS_REGION: ${{ vars.AWS_REGION }}
+  AWS_REGION: eu-central-1
 
 jobs:
   plan:
@@ -43,7 +43,7 @@ jobs:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME_PLAN }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_PLAN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: terragrunt run-all plan

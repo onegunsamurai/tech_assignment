@@ -9,5 +9,5 @@ include "root" {
 inputs = {
   github_repo     = get_env("GITHUB_REPO", "example/tech_assignment")
   branch          = "main"
-  create_provider = true
+  create_provider = false
 }

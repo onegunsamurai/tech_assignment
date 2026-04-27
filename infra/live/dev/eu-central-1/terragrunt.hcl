@@ -4,8 +4,8 @@
 
 locals {
   app_name   = "pet-mgmt"
-  env        = basename(dirname(get_terragrunt_dir()))    # "dev"
-  aws_region = basename(get_terragrunt_dir())             # "eu-central-1"
+  env        = basename(dirname(dirname(get_terragrunt_dir())))  # "dev"
+  aws_region = basename(dirname(get_terragrunt_dir()))           # "eu-central-1"
   account_id = get_aws_account_id()
 
   default_tags = {
