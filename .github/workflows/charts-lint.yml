@@ -1,0 +1,49 @@
+name: charts-lint
+
+on:
+  pull_request:
+    paths:
+      - 'charts/**'
+      - 'manifests/**'
+      - '.github/workflows/charts-lint.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.15.4
+
+      - name: Build umbrella chart deps
+        run: |
+          helm dependency update charts/pet-system
+
+      - name: Lint charts
+        run: |
+          for c in charts/*/; do
+            echo "::group::lint $c"
+            helm lint "$c"
+            echo "::endgroup::"
+          done
+
+      - name: Render templates (dry run)
+        run: |
+          # Each individual chart should render cleanly with default values.
+          for c in charts/pet-crds charts/pet-operator charts/pet-api; do
+            helm template smoke "$c" > /dev/null
+          done
+          helm template smoke charts/pet-system > /dev/null
+
+      - name: kubeval the rendered manifests
+        run: |
+          curl -sL https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz \
+            | tar -xz -C /usr/local/bin kubeval
+          for c in charts/pet-crds charts/pet-operator charts/pet-api charts/pet-system; do
+            helm template smoke "$c" | kubeval --strict --ignore-missing-schemas
+          done

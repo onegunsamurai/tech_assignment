@@ -1,0 +1,42 @@
+image:
+  repository: ghcr.io/example/pet-api
+  tag: dev
+  pullPolicy: IfNotPresent
+
+# Tenant namespace where pet CRs live. The chart deploys here and only
+# reads/writes within this namespace — least privilege.
+namespace: pet-system
+
+serviceAccount:
+  annotations: {}
+  # eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/pet-api
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: true
+  className: alb
+  # AWS Load Balancer Controller annotations. Switched off (target-type ip)
+  # so the ALB targets pods directly without an extra hop through kube-proxy.
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
+    alb.ingress.kubernetes.io/healthcheck-path: /healthz
+  hosts: []  # leave empty to bind any host on this ALB; set when DNS exists
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+replicaCount: 2
+
+# Spread replicas across nodes for availability without specifying topology
+# zones (the cluster autoscaler picks the AZs).
+podAntiAffinityPreferred: true

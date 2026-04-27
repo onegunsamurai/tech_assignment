@@ -1,0 +1,28 @@
+# Tightly scoped: the API needs CRUD on Cat/Dog within its own namespace
+# only. No cluster-wide read; no access to status — that is the operator's
+# territory.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "pet-api.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels: {{- include "pet-api.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [pets.example.com]
+    resources: [cats, dogs]
+    verbs: [get, list, watch, create, delete]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "pet-api.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels: {{- include "pet-api.labels" . | nindent 4 }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "pet-api.fullname" . }}
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "pet-api.fullname" . }}

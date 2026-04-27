@@ -1,0 +1,8 @@
+apiVersion: v2
+name: pet-api
+description: |
+  REST API stub implementing the Pet Management OpenAPI spec. Backed by
+  the same Cat / Dog CRDs the operator watches — no DB.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

@@ -1,0 +1,13 @@
+apiVersion: pets.example.com/v1alpha1
+kind: Dog
+metadata:
+  name: rex
+  namespace: pet-system
+spec:
+  color: black
+  gender: male
+  breed: husky
+  initialState:
+    isBarking: false
+    isHungry: true
+    isSleeping: false

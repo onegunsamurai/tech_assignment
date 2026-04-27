@@ -1,0 +1,60 @@
+# Plan pipeline — runs on PRs that touch the infra tree. Reuses the
+# OIDC + terragrunt run-all approach from
+# /Users/crewmaty/sdm-tpc-infra/.github/workflows/pr.yml but trimmed to
+# a single env (dev) to match the plan.
+name: infra-plan
+
+on:
+  pull_request:
+    paths:
+      - 'infra/**'
+      - '.github/workflows/infra-plan.yml'
+
+permissions:
+  id-token: write       # required for OIDC
+  contents: read
+  pull-requests: write  # so we can comment with the plan output
+
+env:
+  TF_VERSION: 1.9.5
+  TG_VERSION: 0.66.9
+  AWS_REGION: ${{ vars.AWS_REGION }}
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: infra/live/dev/eu-central-1
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Install Terragrunt
+        run: |
+          curl -sLo /usr/local/bin/terragrunt \
+            "https://github.com/gruntwork-io/terragrunt/releases/download/v${TG_VERSION}/terragrunt_linux_amd64"
+          chmod +x /usr/local/bin/terragrunt
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME_PLAN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: terragrunt run-all plan
+        run: |
+          terragrunt run-all plan \
+            --terragrunt-non-interactive \
+            --terragrunt-parallelism 3 \
+            -no-color | tee plan.out
+
+      - name: Upload plan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: terragrunt-plan
+          path: infra/live/dev/eu-central-1/plan.out

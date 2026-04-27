@@ -1,0 +1,31 @@
+# pet-system Application — installed by ArgoCD via the App-of-Apps root.
+# Points at the umbrella chart in this same repo. ArgoCD honors the
+# sync-wave annotations on the embedded sub-charts to install CRDs first.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: pet-system
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/example/tech_assignment.git
+    targetRevision: main
+    path: charts/pet-system
+    helm:
+      valueFiles:
+        - values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: pet-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

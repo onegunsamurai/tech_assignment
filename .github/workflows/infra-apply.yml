@@ -1,0 +1,75 @@
+name: infra-apply
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'infra/**'
+      - '.github/workflows/infra-apply.yml'
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  TF_VERSION: 1.9.5
+  TG_VERSION: 0.66.9
+  AWS_REGION: ${{ vars.AWS_REGION }}
+
+# A single in-flight apply per env: prevents two pipelines fighting over
+# the state lock.
+concurrency:
+  group: infra-apply-dev
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    environment: dev
+    defaults:
+      run:
+        shell: bash
+        working-directory: infra/live/dev/eu-central-1
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Install Terragrunt
+        run: |
+          curl -sLo /usr/local/bin/terragrunt \
+            "https://github.com/gruntwork-io/terragrunt/releases/download/v${TG_VERSION}/terragrunt_linux_amd64"
+          chmod +x /usr/local/bin/terragrunt
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME_APPLY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Resolve ArgoCD admin password from Secrets Manager
+        id: secrets
+        run: |
+          # Skip on the very first run — the secret is created in this
+          # same plan and may not exist yet. The argocd module also won't
+          # be applied if the secrets module hasn't run.
+          set +e
+          PWD=$(aws secretsmanager get-secret-value \
+            --secret-id "dev/argocd-admin-password" \
+            --query SecretString --output text 2>/dev/null)
+          if [ -n "$PWD" ]; then
+            echo "::add-mask::$PWD"
+            echo "TF_VAR_argocd_admin_password=$PWD" >> "$GITHUB_ENV"
+          fi
+
+      - name: terragrunt run-all apply
+        env:
+          GITHUB_REPO: ${{ github.repository }}
+          GIT_REPO_URL: https://github.com/${{ github.repository }}.git
+        run: |
+          terragrunt run-all apply \
+            --terragrunt-non-interactive \
+            --terragrunt-parallelism 3 \
+            -auto-approve

@@ -42,3 +42,32 @@ terraform.rc
 # Optional: ignore plan files saved before destroying Terraform configuration
 # Uncomment the line below if you want to ignore planout files.
 # planout
+
+# ---- Go ----
+bin/
+vendor/
+*.test
+*.out
+coverage.txt
+
+# ---- Kubebuilder ----
+testbin/
+
+# ---- IDE ----
+.vscode/
+.idea/
+
+# ---- macOS ----
+.DS_Store
+
+# ---- Helm ----
+charts/**/charts/
+charts/**/Chart.lock
+
+# ---- Build artifacts ----
+dist/
+build/
+
+# ---- Local kube/aws config ----
+*.kubeconfig
+.envrc.local

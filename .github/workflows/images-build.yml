@@ -1,0 +1,60 @@
+name: images-build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'api/**'
+      - 'operator/**'
+      - '.github/workflows/images-build.yml'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: pet-api
+            context: .
+            dockerfile: api/Dockerfile
+          - image: pet-operator
+            context: operator
+            dockerfile: operator/Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME_APPLY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build & push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: |
+            ${{ steps.ecr.outputs.registry }}/dev/${{ matrix.image }}:${{ github.sha }}
+            ${{ steps.ecr.outputs.registry }}/dev/${{ matrix.image }}:latest
+          # Image is amd64-only by default. Set platforms for multi-arch
+          # if/when ARM nodes are added.
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

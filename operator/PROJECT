@@ -1,0 +1,25 @@
+domain: example.com
+layout:
+- go.kubebuilder.io/v4
+projectName: pet-operator
+repo: github.com/example/tech_assignment/operator
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: example.com
+  group: pets
+  kind: Cat
+  path: github.com/example/tech_assignment/operator/api/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: example.com
+  group: pets
+  kind: Dog
+  path: github.com/example/tech_assignment/operator/api/v1alpha1
+  version: v1alpha1
+version: "3"

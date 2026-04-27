@@ -1,0 +1,8 @@
+apiVersion: v2
+name: pet-crds
+description: |
+  CustomResourceDefinitions for Cat and Dog. Installed in ArgoCD sync-wave -1
+  so that the operator and any pet manifests come up after the schema exists.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

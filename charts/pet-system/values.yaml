@@ -1,0 +1,18 @@
+# Top-level overrides for the dev environment. Production environments
+# should layer their own values file on top via Argo's `valueFiles`.
+
+pet-operator:
+  image:
+    repository: ghcr.io/example/pet-operator
+    tag: dev
+  reconcileInterval: 30s
+  leaderElection: true
+
+pet-api:
+  image:
+    repository: ghcr.io/example/pet-api
+    tag: dev
+  namespace: pet-system
+  ingress:
+    enabled: true
+    className: alb

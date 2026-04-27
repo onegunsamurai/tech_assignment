@@ -1,0 +1,29 @@
+# Sample pet CRs — proves the system works end-to-end. Sync-wave 2 so it
+# runs after pet-system has installed CRDs and the operator is healthy.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sample-pets
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/example/tech_assignment.git
+    targetRevision: main
+    path: manifests/sample-pets
+    directory:
+      recurse: false
+      include: '*.yaml'
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: pet-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

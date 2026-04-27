@@ -1,0 +1,28 @@
+# app-of-apps root — applied once at bootstrap (by Terraform's argocd
+# module). Watches argocd/applications/ in the same repo and reconciles
+# whatever Application resources land there.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: app-of-apps
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/example/tech_assignment.git
+    targetRevision: main
+    path: argocd
+    directory:
+      recurse: true
+      include: 'applications/*.yaml'
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
