@@ -1,0 +1,19 @@
+apiVersion: v2
+name: pet-system
+description: |
+  Umbrella chart that installs the pet system in the right order:
+  CRDs (sync-wave -1) → operator (0) → API (1).
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+
+dependencies:
+  - name: pet-crds
+    version: "0.1.0"
+    repository: "file://../pet-crds"
+  - name: pet-operator
+    version: "0.1.0"
+    repository: "file://../pet-operator"
+  - name: pet-api
+    version: "0.1.0"
+    repository: "file://../pet-api"

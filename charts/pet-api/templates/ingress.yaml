@@ -1,0 +1,37 @@
+{{- if .Values.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "pet-api.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels: {{- include "pet-api.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations: {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+    {{- if .Values.ingress.hosts }}
+    {{- range .Values.ingress.hosts }}
+    - host: {{ . | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "pet-api.fullname" $ }}
+                port: { number: {{ $.Values.service.port }} }
+    {{- end }}
+    {{- else }}
+    # No host set → match any host on this ALB. Useful for the dev demo.
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "pet-api.fullname" . }}
+                port: { number: {{ .Values.service.port }} }
+    {{- end }}
+{{- end -}}

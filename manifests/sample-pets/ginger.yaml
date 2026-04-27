@@ -1,0 +1,17 @@
+# Sample Cat — proves declarative pet definition. Apply with:
+#   kubectl apply -f manifests/sample-pets/ginger.yaml
+# Then watch state evolve:
+#   watch kubectl get cat ginger -n pet-system
+apiVersion: pets.example.com/v1alpha1
+kind: Cat
+metadata:
+  name: ginger
+  namespace: pet-system
+spec:
+  color: ginger
+  gender: female
+  breed: maine-coon
+  initialState:
+    isMeowing: true
+    isPurring: true
+    isHiding: false

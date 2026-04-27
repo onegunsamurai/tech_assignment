@@ -1,0 +1,3 @@
+# pet-crds takes no values; the manifests are static. Kept as a placeholder
+# so `helm install` does not warn about a missing values.yaml.
+{}

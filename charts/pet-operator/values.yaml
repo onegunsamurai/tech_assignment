@@ -1,0 +1,31 @@
+image:
+  repository: ghcr.io/example/pet-operator
+  tag: dev
+  pullPolicy: IfNotPresent
+
+# Serviceaccount may be IRSA-bound when running on EKS. Leave empty in
+# environments where node-level IAM (kiam, kube2iam) covers the operator.
+serviceAccount:
+  annotations: {}
+  # eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/pet-operator
+
+reconcileInterval: 30s
+leaderElection: true
+
+# Modest footprint by design — this controller does very little work.
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+
+# When the cluster has cluster-autoscaler / Karpenter and SPOT capacity, the
+# pod can run there: it is restartable and stateless.
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Replicas > 1 only useful with leaderElection: true.
+replicaCount: 1

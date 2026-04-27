@@ -1,0 +1,8 @@
+apiVersion: v2
+name: pet-operator
+description: |
+  Controller-runtime based operator that drives Cat / Dog dynamic state on
+  a fixed cadence. Watches CRs cluster-wide; writes to .status only.
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

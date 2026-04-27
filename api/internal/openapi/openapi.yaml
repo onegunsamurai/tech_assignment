@@ -1,0 +1,188 @@
+openapi: 3.0.3
+info:
+  title: Pet Management API
+  version: 1.0.0
+  description: |
+    REST API for managing dogs and cats. Pet objects carry immutable identity
+    (color, gender, breed) and dynamic state. Pets are immutable after
+    creation: there are no PUT/PATCH endpoints. To "modify" a pet, delete it
+    and re-create it.
+
+    Backed by Kubernetes CRDs — there is no external database.
+servers:
+  - url: /
+paths:
+  /dogs:
+    get:
+      summary: List all dogs
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Dog' }
+    post:
+      summary: Create a new dog
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DogCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Dog' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /dogs/{id}:
+    get:
+      summary: Retrieve a dog by ID
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Dog' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      summary: Delete a dog by ID
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '204': { description: No Content }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /cats:
+    get:
+      summary: List all cats
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Cat' }
+    post:
+      summary: Create a new cat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CatCreate' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cat' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /cats/{id}:
+    get:
+      summary: Retrieve a cat by ID
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cat' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      summary: Delete a cat by ID
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '204': { description: No Content }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /healthz:
+    get:
+      summary: Liveness probe
+      responses: { '200': { description: OK } }
+  /readyz:
+    get:
+      summary: Readiness probe
+      responses: { '200': { description: OK } }
+components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string }
+  schemas:
+    Gender:
+      type: string
+      enum: [male, female]
+    DogState:
+      type: object
+      required: [isBarking, isHungry, isSleeping]
+      properties:
+        isBarking:  { type: boolean }
+        isHungry:   { type: boolean }
+        isSleeping: { type: boolean }
+    CatState:
+      type: object
+      required: [isMeowing, isPurring, isHiding]
+      properties:
+        isMeowing: { type: boolean }
+        isPurring: { type: boolean }
+        isHiding:  { type: boolean }
+    DogCreate:
+      type: object
+      required: [color, gender, breed, state]
+      properties:
+        color:  { type: string, minLength: 1 }
+        gender: { $ref: '#/components/schemas/Gender' }
+        breed:  { type: string, minLength: 1 }
+        state:  { $ref: '#/components/schemas/DogState' }
+    CatCreate:
+      type: object
+      required: [color, gender, breed, state]
+      properties:
+        color:  { type: string, minLength: 1 }
+        gender: { $ref: '#/components/schemas/Gender' }
+        breed:  { type: string, minLength: 1 }
+        state:  { $ref: '#/components/schemas/CatState' }
+    Dog:
+      allOf:
+        - $ref: '#/components/schemas/DogCreate'
+        - type: object
+          required: [id]
+          properties:
+            id: { type: string }
+    Cat:
+      allOf:
+        - $ref: '#/components/schemas/CatCreate'
+        - type: object
+          required: [id]
+          properties:
+            id: { type: string }
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:       { type: string }
+            message:    { type: string }
+            details:    { type: array, items: { type: object } }
+            request_id: { type: string }
+  responses:
+    BadRequest:
+      description: Validation failed
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: Pet not found
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }

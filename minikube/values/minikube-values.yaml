@@ -1,0 +1,46 @@
+# Helm values override for the minikube path.
+#
+# Layered on top of charts/pet-system (umbrella). Subchart values are
+# addressed by the dependency name from charts/pet-system/Chart.yaml.
+#
+# What changes vs. the cloud defaults:
+#   - Local image tags built via `minikube image build` (no registry pull).
+#   - Single replica everywhere; leader election off (single-node cluster).
+#   - Pod anti-affinity off (single node).
+#   - IRSA service-account annotations stripped.
+#   - Ingress switched from ALB to the minikube nginx-ingress addon, with
+#     ALB-only annotations cleared. Host: pets.local.
+#   - Operator reconcile interval shortened from 30s to 15s so a reviewer
+#     sees state changes within one screen refresh.
+
+pet-operator:
+  image:
+    repository: pet-operator
+    tag: local
+    pullPolicy: IfNotPresent
+  replicaCount: 1
+  reconcileInterval: 15s
+  leaderElection: false
+  serviceAccount:
+    annotations: {}
+
+pet-api:
+  image:
+    repository: pet-api
+    tag: local
+    pullPolicy: IfNotPresent
+  replicaCount: 1
+  podAntiAffinityPreferred: false
+  serviceAccount:
+    annotations: {}
+  ingress:
+    enabled: true
+    className: nginx
+    # The ALB-specific annotations from charts/pet-api/values.yaml leak
+    # through here — Helm cannot remove keys from a subchart's default map
+    # via an external values file (helm/helm#5184). They are harmless under
+    # ingress-nginx, which only consumes annotations under its own prefix
+    # (nginx.ingress.kubernetes.io/...). Left as-is to avoid touching the
+    # shared chart templates.
+    hosts:
+      - pets.local

@@ -1,0 +1,45 @@
+name: go-test
+
+on:
+  pull_request:
+    paths:
+      - 'api/**'
+      - 'operator/**'
+      - '.github/workflows/go-test.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'api/**'
+      - 'operator/**'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: [api, operator]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache-dependency-path: ${{ matrix.module }}/go.sum
+
+      - name: go mod tidy (verify)
+        working-directory: ${{ matrix.module }}
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum
+
+      - name: vet
+        working-directory: ${{ matrix.module }}
+        run: go vet ./...
+
+      - name: test
+        working-directory: ${{ matrix.module }}
+        run: go test -race -count=1 -coverprofile=coverage.txt ./...
