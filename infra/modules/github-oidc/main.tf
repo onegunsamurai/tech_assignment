@@ -99,7 +99,39 @@ resource "aws_iam_role_policy_attachment" "apply_admin" {
   policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }
 
-# Both roles need to write the terraform state bucket and the lock table.
-# That permission is already covered by ReadOnlyAccess (read) and
-# AdministratorAccess (write). If those are tightened, re-add explicit
-# S3+DynamoDB permissions here.
+# The plan role needs DynamoDB write access on the lock table — terraform
+# acquires a state lock even on read-only operations, and ReadOnlyAccess
+# does not grant PutItem/DeleteItem. AdministratorAccess on the apply role
+# already covers this, so only the plan role gets an inline policy.
+data "aws_iam_policy_document" "plan_state_backend" {
+  statement {
+    sid    = "TFLockTable"
+    effect = "Allow"
+    actions = [
+      "dynamodb:GetItem",
+      "dynamodb:PutItem",
+      "dynamodb:DeleteItem",
+      "dynamodb:DescribeTable",
+    ]
+    resources = [var.lock_table_arn]
+  }
+
+  statement {
+    sid    = "TFStateBucketRead"
+    effect = "Allow"
+    actions = [
+      "s3:GetObject",
+      "s3:ListBucket",
+    ]
+    resources = [
+      var.state_bucket_arn,
+      "${var.state_bucket_arn}/*",
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "plan_state_backend" {
+  name   = "${var.env}-gha-plan-tf-backend"
+  role   = aws_iam_role.plan.name
+  policy = data.aws_iam_policy_document.plan_state_backend.json
+}
